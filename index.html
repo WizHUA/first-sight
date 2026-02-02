@@ -2,9 +2,82 @@
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <title>Hello</title>
+    <title>小问答</title>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
+      .card { border: 1px solid #ddd; border-radius: 12px; padding: 24px; }
+      .options { display: grid; gap: 12px; margin-top: 16px; }
+      button { padding: 12px 16px; border-radius: 8px; border: 1px solid #bbb; background: #f7f7f7; cursor: pointer; }
+      button:hover { background: #eee; }
+      .hidden { display: none; }
+      .summary li { margin: 6px 0; }
+    </style>
   </head>
   <body>
-    hello world
+    <div class="card">
+      <h1 id="title">问题 1</h1>
+      <div id="question">问题1：选项A 选项B</div>
+      <div class="options" id="options"></div>
+
+      <div id="summary" class="hidden">
+        <h2>你的选择</h2>
+        <ul class="summary" id="summaryList"></ul>
+      </div>
+    </div>
+
+    <script>
+      const questions = [
+        { text: "问题1：选项A 选项B", options: ["选项A", "选项B"] },
+        { text: "问题2：选项A 选项B", options: ["选项A", "选项B"] },
+        { text: "问题3：选项A 选项B", options: ["选项A", "选项B"] },
+      ];
+
+      let index = 0;
+      const answers = [];
+
+      const titleEl = document.getElementById("title");
+      const questionEl = document.getElementById("question");
+      const optionsEl = document.getElementById("options");
+      const summaryEl = document.getElementById("summary");
+      const summaryListEl = document.getElementById("summaryList");
+
+      function renderQuestion() {
+        const q = questions[index];
+        titleEl.textContent = `问题 ${index + 1}`;
+        questionEl.textContent = q.text;
+        optionsEl.innerHTML = "";
+
+        q.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.textContent = opt;
+          btn.onclick = () => {
+            answers[index] = opt;
+            index += 1;
+            if (index < questions.length) {
+              renderQuestion();
+            } else {
+              showSummary();
+            }
+          };
+          optionsEl.appendChild(btn);
+        });
+      }
+
+      function showSummary() {
+        titleEl.textContent = "完成";
+        questionEl.classList.add("hidden");
+        optionsEl.classList.add("hidden");
+        summaryEl.classList.remove("hidden");
+
+        summaryListEl.innerHTML = "";
+        questions.forEach((q, i) => {
+          const li = document.createElement("li");
+          li.textContent = `问题${i + 1}：${answers[i] || "未选择"}`;
+          summaryListEl.appendChild(li);
+        });
+      }
+
+      renderQuestion();
+    </script>
   </body>
 </html>
