@@ -4,18 +4,103 @@
     <meta charset="utf-8" />
     <title>小问答</title>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 16px; }
-      .card { border: 1px solid #ddd; border-radius: 12px; padding: 24px; }
+      :root {
+        --bg: #fff7fb;
+        --card: #ffffff;
+        --border: #f0d9e8;
+        --text: #5a3d5c;
+        --accent: #ff8fb1;
+        --accent2: #7bdff2;
+      }
+      body {
+        font-family: "Comic Sans MS", "Noto Sans SC", system-ui, sans-serif;
+        max-width: 820px;
+        margin: 32px auto;
+        padding: 0 16px;
+        background: var(--bg);
+        color: var(--text);
+      }
+      h1, h2 { margin: 0 0 12px; }
+      .card {
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 22px;
+        background: var(--card);
+        box-shadow: 0 8px 24px rgba(255, 143, 177, 0.15);
+        margin-bottom: 20px;
+      }
       .options { display: grid; gap: 12px; margin-top: 16px; }
-      button { padding: 12px 16px; border-radius: 8px; border: 1px solid #bbb; background: #f7f7f7; cursor: pointer; }
-      button:hover { background: #eee; }
+      button {
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+        background: #fff;
+        cursor: pointer;
+        color: var(--text);
+        transition: transform .05s ease, background .2s ease;
+      }
+      button:hover { background: #fff0f6; }
+      button:active { transform: scale(0.98); }
       .hidden { display: none; }
       .summary li { margin: 6px 0; }
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #ffe3ef;
+        color: #a83b6c;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+      /* cute map demo */
+      .map {
+        position: relative;
+        height: 280px;
+        border-radius: 14px;
+        background: linear-gradient(180deg, #cdeffd, #fef6ff);
+        border: 2px dashed #c8b6ff;
+        overflow: hidden;
+      }
+      .map::before {
+        content: "★ 小小地图 ★";
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        font-size: 12px;
+        color: #8b7aaa;
+        background: #fff7;
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+      .dot {
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        border: 3px solid #fff;
+        box-shadow: 0 6px 12px rgba(255, 143, 177, .35);
+        transform: translate(-50%, -50%);
+      }
+      .trail {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .trail path {
+        stroke: var(--accent2);
+        stroke-width: 4;
+        fill: none;
+        stroke-linecap: round;
+        stroke-dasharray: 6 8;
+        opacity: 0.8;
+      }
+      .note { font-size: 12px; color: #8b7aaa; margin-top: 8px; }
     </style>
   </head>
   <body>
     <div class="card">
-      <h1 id="title">问题 1</h1>
+      <h1 id="title">问题 1 <span class="badge">可爱模式</span></h1>
       <div id="question">问题1：选项A 选项B</div>
       <div class="options" id="options"></div>
 
@@ -25,7 +110,19 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2>动态位置示例</h2>
+      <div class="map" id="map">
+        <svg class="trail" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path id="path" d=""></path>
+        </svg>
+        <div class="dot" id="dot"></div>
+      </div>
+      <div class="note">小点点会沿着路线移动～</div>
+    </div>
+
     <script>
+      // 小问答
       const questions = [
         { text: "问题1：选项A 选项B", options: ["选项A", "选项B"] },
         { text: "问题2：选项A 选项B", options: ["选项A", "选项B"] },
@@ -43,7 +140,7 @@
 
       function renderQuestion() {
         const q = questions[index];
-        titleEl.textContent = `问题 ${index + 1}`;
+        titleEl.childNodes[0].textContent = `问题 ${index + 1} `;
         questionEl.textContent = q.text;
         optionsEl.innerHTML = "";
 
@@ -64,7 +161,7 @@
       }
 
       function showSummary() {
-        titleEl.textContent = "完成";
+        titleEl.childNodes[0].textContent = "完成 ";
         questionEl.classList.add("hidden");
         optionsEl.classList.add("hidden");
         summaryEl.classList.remove("hidden");
@@ -78,6 +175,48 @@
       }
 
       renderQuestion();
+
+      // 动态点位 demo（模拟位置数据）
+      const mapEl = document.getElementById("map");
+      const dotEl = document.getElementById("dot");
+      const pathEl = document.getElementById("path");
+
+      const points = [
+        { x: 10, y: 70 },
+        { x: 20, y: 40 },
+        { x: 35, y: 55 },
+        { x: 55, y: 30 },
+        { x: 75, y: 45 },
+        { x: 90, y: 20 },
+      ];
+
+      // 画路线
+      pathEl.setAttribute(
+        "d",
+        points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ")
+      );
+
+      let t = 0;
+      function animate() {
+        // 在线段之间插值移动
+        const seg = Math.floor(t) % (points.length - 1);
+        const local = t - Math.floor(t);
+
+        const a = points[seg];
+        const b = points[seg + 1];
+
+        const x = a.x + (b.x - a.x) * local;
+        const y = a.y + (b.y - a.y) * local;
+
+        dotEl.style.left = `${x}%`;
+        dotEl.style.top = `${y}%`;
+
+        t += 0.01;
+        if (t >= points.length - 1) t = 0;
+
+        requestAnimationFrame(animate);
+      }
+      animate();
     </script>
   </body>
 </html>
